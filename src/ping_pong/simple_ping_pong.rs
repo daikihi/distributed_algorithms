@@ -1,5 +1,5 @@
 use std::thread;
-use std::sync::mpsc::{channel, RecvError};
+use std::sync::mpsc::channel;
 
 #[derive(Debug)]
 struct Message{
@@ -14,7 +14,7 @@ pub fn run(){
     // Ping
     let ping_handle = thread::spawn(move||{
         let message = Message{value: String::from("PING")};
-        let send_result = ping_sender.send(message);
+        let _ = ping_sender.send(message);
         let pong = pong_receiver.recv();
         match pong {
             Ok(p) => {
@@ -35,7 +35,7 @@ pub fn run(){
                 println!("receive.... {:?}", m);
                 let _ = pong_sender.send(Message{value: String::from("PONG")});
             }
-            Err(e) => {
+            Err(_e) => {
                 println!("PONG ERROR");
             }
         }
