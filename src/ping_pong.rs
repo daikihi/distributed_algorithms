@@ -1,51 +1,48 @@
-use std::sync::{mpsc::{channel, Sender}, Arc, Mutex};
 use std::thread;
-
-trait Message: std::fmt::Debug + Send {
-    fn say_message(sender: Arc<Mutex<Sender<Box<dyn Message>>>>) where Self: Sized;
-}
+use std::sync::mpsc::{channel, RecvError};
 
 #[derive(Debug)]
-struct Ping {}
-
-impl Message for Ping {
-    fn say_message(sender: Arc<Mutex<Sender<Box<dyn Message>>>>) {
-        sender.lock().unwrap().send(Box::new(Ping {})).unwrap();
-    }
+struct Message{
+    pub value: String
 }
 
-#[derive(Debug)]
-struct Pong {}
+pub fn run(){
+    let (ping_sender, ping_receiver) = channel::<Message>();
+    let (pong_sender, pong_receiver) = channel::<Message>();
+    let mut handles = vec![];
 
-impl Message for Pong {
-    fn say_message(sender: Arc<Mutex<Sender<Box<dyn Message>>>>) {
-        sender.lock().unwrap().send(Box::new(Pong {})).unwrap();
-    }
+    // Ping
+    let ping_handle = thread::spawn(move||{
+        let message = Message{value: String::from("PING")};
+        let send_result = ping_sender.send(message);
+        let pong = pong_receiver.recv();
+        match pong {
+            Ok(p) => {
+                println!("simple mission compleated message = {:?}", p);
+            }
+            Err(e) => {
+                println!("ERROR!  {:?}", e);
+            }
+        }
+    });
+    handles.push(ping_handle);
 
-}
+    // Pong 
+    let pong_hundle = thread::spawn(move||{
+        let received_message = ping_receiver.recv();
+        match  received_message {
+            Ok(m) =>{
+                println!("receive.... {:?}", m);
+                let _ = pong_sender.send(Message{value: String::from("PONG")});
+            }
+            Err(e) => {
+                println!("PONG ERROR");
+            }
+        }
+    });
+    handles.push(pong_hundle);
 
-pub fn run() {
-    let (tx, rx) = channel::<Box<dyn Message>>();
-    let tx_arc = Arc::new(Mutex::new(tx));
-
-    // Spawn a thread for Ping
-    {
-        let tx_clone = Arc::clone(&tx_arc);
-        thread::spawn(move || {
-            Ping::say_message(tx_clone);
-        });
-    }
-
-    // Spawn a thread for Pong
-    {
-        let tx_clone = Arc::clone(&tx_arc);
-        thread::spawn(move || {
-            Pong::say_message(tx_clone);
-        });
-    }
-
-    for _ in 0..2 {
-        let msg = rx.recv().unwrap();
-        println!("{:?}", msg);
+    for h in handles{
+        let _ = h.join();
     }
 }
