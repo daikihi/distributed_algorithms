@@ -1,4 +1,4 @@
-mod lamport_clock;
+mod logical_clock;
 mod ping_pong;
 use std::env;
 
@@ -18,7 +18,7 @@ fn main() {
     match args[1].as_str() {
         "simple" => ping_pong::simple_ping_pong::run(),
         "multiple" => ping_pong::multiple_ping_pong::run(),
-        "lc" => lamport_clock::simple_lamport_clock::run(),
+        "lc" => logical_clock::lamport_clock::simple_lamport_clock::run(),
         _ => {
             println!("Invalid mode: {}", args[1]);
             println!("Usage: {} <mode>", args[0]);
