@@ -8,17 +8,22 @@ struct Node {
     pub current_clock: i128,
     pub sender: Sender<Message>,
     pub receiver: Receiver<Message>,
-    pub num_nodes: i32
+    pub num_nodes: i32,
 }
 
 impl Node {
-    pub fn new(_id: i32, sender: Sender<Message>, receiver: Receiver<Message>, num_nodes: i32) -> Self {
+    pub fn new(
+        _id: i32,
+        sender: Sender<Message>,
+        receiver: Receiver<Message>,
+        num_nodes: i32,
+    ) -> Self {
         Self {
             id: _id,
             current_clock: 0,
             sender: sender,
             receiver: receiver,
-            num_nodes: num_nodes
+            num_nodes: num_nodes,
         }
     }
 
@@ -47,7 +52,7 @@ impl Node {
             self.current_clock += 1;
             if self.current_clock <= 100000 {
                 self.send_message(target);
-            }else{
+            } else {
                 println!("my_id = {}, DONE!", self.id);
             }
         }
@@ -93,10 +98,9 @@ pub fn run() {
         env.add_node(i, num_nodes);
     }
 
-
     // 各ノードをスレッドで動作させる
     let mut handles = vec![];
-    let mut nodes = std::mem::take(&mut env.nodes); 
+    let mut nodes = std::mem::take(&mut env.nodes);
     for mut node in nodes {
         handles.push(thread::spawn(move || {
             for _ in 0..num_nodes {
