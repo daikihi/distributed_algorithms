@@ -20,14 +20,22 @@ impl Node {
         new_clock
     }
 
-    pub fn update_time_stamp(&self, logical_clock: LogicalClock) -> LogicalClock {
-        if self.id == logical_clock.id {
-            let mut max: LogicalClock = logical_clock.get_max(logical_clock.clone());
-            max.clock += 1;
-            max
+    fn update_time_stamp(&self, logical_clock: LogicalClock) -> LogicalClock {
+        let received_id: i32 = logical_clock.id;
+        let current_clock: Vec<LogicalClock> = self.logical_clock.clone();
+        // check here
+        let current_timestamp: LogicalClock = current_clock.into_iter().filter(|lc| lc.id == received_id).next().unwrap_or_else(|| LogicalClock{id: received_id, clock: 0});
+        let next_ts :i128 = current_timestamp.clock.max(logical_clock.clock);
+
+        let update_value: i128 =if self.id == logical_clock.id {
+            next_ts + 1
         }else {
-            logical_clock.get_max(logical_clock.clone()) 
-        }
+            next_ts
+        };
+
+
+        println!("next id = {}, ts = {}", received_id, update_value);
+        LogicalClock{id: received_id, clock: update_value}
     }
 
     fn print_current_lc_state(&self) {
@@ -64,6 +72,27 @@ mod tests_for_node {
         assert_eq!(updated[1].clock, 3);
 
         assert_eq!(node.logical_clock, updated);
+
+
+        node.logical_clock = vec![
+            LogicalClock{id: 1, clock: 7},
+            LogicalClock{id: 2, clock: 12},
+        ];
+
+        let received_logical_clock = vec![
+            LogicalClock{id: 1, clock: 4},
+            LogicalClock{id: 2, clock: 18},
+        ];
+
+        let updated_seconds: Vec<LogicalClock> = node.update_logical_clock(received_logical_clock);
+        assert_eq!(updated_seconds.len(), 2);
+        assert_eq!(updated_seconds[0].id, 1);
+        assert_eq!(updated_seconds[0].clock, 8);
+        assert_eq!(updated_seconds[1].id, 2);
+        assert_eq!(updated_seconds[1].clock, 18);
+
+        assert_eq!(node.logical_clock, updated_seconds);
+
     }
 }
 
@@ -91,9 +120,10 @@ struct LogicalClock {
 
 impl LogicalClock {
     pub fn get_max(&self, received_logical_clock: LogicalClock) -> LogicalClock {
+        let max_value:i128 = self.clock.max(received_logical_clock.clock);
         LogicalClock {
             id: self.id,
-            clock: self.clock.max(received_logical_clock.clock),
+            clock: max_value,
         }
     }
 }
@@ -104,7 +134,7 @@ struct Message {
 }
 
 struct Envieonment {
-
+    
 }
 
 pub fn run() {
