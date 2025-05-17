@@ -5,3 +5,22 @@ edition = "2021"
 
 [dependencies]
 rand = "0.8"
+
+
+[[bin]]
+name = "simple_ping_pong"
+path = "src/bin/simple_ping_pong.rs"
+
+[[bin]]
+name = "multiple_ping_pong"
+path = "src/bin/multiple_ping_pong.rs"
+
+[[bin]]
+name = "lamport_clock"
+path = "src/bin/lamport_clock.rs"
+
+[[bin]]
+name = "vector_clock"
+path = "src/bin/vector_clock.rs"
+
+
