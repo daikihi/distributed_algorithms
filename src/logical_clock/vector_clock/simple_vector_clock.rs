@@ -1,139 +1,107 @@
-struct Node {
-    id: i32,
-    logical_clock: Vec<LogicalClock>,
+use std::collections::HashMap;
+
+enum Event {
+    Send,
+    Receive,
+    Local
 }
 
-impl Node {
-    pub fn new(node_id: i32) -> Self {
-        Self {
-            id: node_id,
-            logical_clock: Vec::<LogicalClock>::new(),
+#[derive(Debug, Clone)]
+struct VectorClock{
+    pub my_id:i128,
+    pub my_clock:i128,
+    pub all_clocks: HashMap<i128, i128>,
+}
+
+impl VectorClock {
+    fn new(num_nodes: i128, my_id: i128) -> Self {
+        let mut all_clocks = HashMap::new();
+        for i in 0..num_nodes {
+            all_clocks.insert(i, 0);
+        }
+        VectorClock {
+            my_id: my_id,
+            my_clock: 0,
+            all_clocks: all_clocks,
         }
     }
 
-    pub fn update_logical_clock(
-        &mut self,
-        received_logical_clock: Vec<LogicalClock>,
-    ) -> Vec<LogicalClock> {
-        let mut new_clock = Vec::<LogicalClock>::new();
-        for lc in received_logical_clock {
-            new_clock.push(self.update_time_stamp(lc));
-        }
-        self.logical_clock = new_clock.clone();
-        new_clock
+    // include send event
+    fn local_event(&mut self) {
+        self.my_clock += 1;
+        self.all_clocks.insert(self.my_id, self.my_clock);
     }
 
-    fn update_time_stamp(&self, logical_clock: LogicalClock) -> LogicalClock {
-        let received_id: i32 = logical_clock.id;
-        let current_clock: Vec<LogicalClock> = self.logical_clock.clone();
-        // check here
-        let current_timestamp: LogicalClock = current_clock
-            .into_iter()
-            .filter(|lc| lc.id == received_id)
-            .next()
-            .unwrap_or_else(|| LogicalClock {
-                id: received_id,
-                clock: 0,
-            });
-        let next_ts: i128 = current_timestamp.clock.max(logical_clock.clock);
-
-        let update_value: i128 = if self.id == logical_clock.id {
-            next_ts + 1
-        } else {
-            next_ts
-        };
-
-        println!("next id = {}, ts = {}", received_id, update_value);
-        LogicalClock {
-            id: received_id,
-            clock: update_value,
+    fn receive_event(&mut self, sender_id: i128, sender_clocks: HashMap<i128, i128>) {
+        // self.all_clocks.insert(self.my_id, self.my_clock + 1);
+        for (id, clock) in sender_clocks.iter() {
+            if self.my_id == *id {
+                let self_clock = self.my_clock;
+                let max_clock = std::cmp::max(*clock, self_clock) + 1;
+                self.my_clock = max_clock;
+                self.all_clocks.insert(*id, max_clock);
+            }else{
+                let self_clock = self.all_clocks.get(id).unwrap();
+                let max_clock = std::cmp::max(*clock, *self_clock);
+                self.all_clocks.insert(*id, max_clock);
+            }
         }
     }
+    
+}
 
-    fn print_current_lc_state(&self) {
-        for lc in self.logical_clock.clone() {
-            println!("{:?}", lc);
+
+struct EventData {
+    pub event: Event,
+    pub sender_id: i128,
+    pub receiver_id: Option<i128>,
+}
+
+fn seinario() -> Vec<EventData>{
+    let mut sienario_map: Vec< EventData> = Vec::new();
+    sienario_map.push(EventData{event: Event::Local, sender_id: 0, receiver_id: None});
+    sienario_map.push(EventData{event: Event::Send, sender_id: 0, receiver_id: Some(1)});
+    sienario_map.push(EventData{event: Event::Receive, sender_id: 1, receiver_id: Some(0)});
+    sienario_map.push(EventData{event: Event::Local, sender_id: 1, receiver_id: None});
+    sienario_map
+}
+
+
+pub fn run(){
+    let num_nodes = 5;
+    let mut all_nodes: HashMap<i128, VectorClock> = HashMap::new();
+    for id in 0..num_nodes {
+        let vc: VectorClock = VectorClock::new(num_nodes, id);
+        println!("{:?}", vc);
+        all_nodes.insert(id, vc);
+    }
+
+    let event_map = seinario();
+    for event in event_map.iter() {
+        match event.event {
+            Event::Local => {
+                let mut vc = all_nodes.get_mut(&event.sender_id).unwrap();
+                vc.local_event();
+                println!("Local event: {:?}", vc);
+            },
+            Event::Send => {
+                let mut vc = all_nodes.get_mut(&event.sender_id).unwrap();
+                vc.local_event();
+                println!("Send event: {:?}", vc);
+            },
+            Event::Receive => {
+                let sender_vc: &mut VectorClock = all_nodes.get_mut(&event.sender_id).unwrap();
+                let _tmp_sender_vc = sender_vc.clone();
+                sender_vc.receive_event(event.sender_id, _tmp_sender_vc.all_clocks.clone());
+                let mut vc = all_nodes.get_mut(&event.sender_id).unwrap();
+                println!("Receive event: {:?}", vc);
+            }
         }
     }
-}
-
-/// A structure representing a logical clock in a distributed system.
-///
-/// This clock is identified by a unique `id` and maintains a `clock` value
-/// to track the logical time of the associated process or entity.
-///
-/// # Fields
-///
-/// * `id` - A unique identifier for the logical clock.
-/// * `clock` - The current logical time value, represented as a 128-bit integer.
-///
-/// # Example
-///
-/// ```rust
-/// let clock = LogicalClock { id: 1, clock: 0 };
-/// println!("Clock ID: {}, Time: {}", clock.id, clock.clock);
-/// ```
-#[derive(Debug, Clone, PartialEq)]
-struct LogicalClock {
-    pub id: i32,
-    pub clock: i128,
-}
-
-struct Message {
-    sender_id: i32,
-    vector_clock: Vec<LogicalClock>,
-}
-
-struct Envieonment {}
-
-// TODO: implement this method
-pub fn run() {}
-
-#[cfg(test)]
-mod tests_for_node {
-    use super::*;
-
-    #[test]
-    fn test_update_logical_clock() {
-        let mut node = Node::new(1);
-
-        node.logical_clock = vec![
-            LogicalClock { id: 1, clock: 0 },
-            LogicalClock { id: 2, clock: 0 },
-        ];
-
-        let received_logical_clock = vec![
-            LogicalClock { id: 1, clock: 0 },
-            LogicalClock { id: 2, clock: 3 },
-        ];
-
-        let updated: Vec<LogicalClock> = node.update_logical_clock(received_logical_clock);
-
-        assert_eq!(updated.len(), 2);
-        assert_eq!(updated[0].id, 1);
-        assert_eq!(updated[0].clock, 1);
-        assert_eq!(updated[1].id, 2);
-        assert_eq!(updated[1].clock, 3);
-
-        assert_eq!(node.logical_clock, updated);
-
-        node.logical_clock = vec![
-            LogicalClock { id: 1, clock: 7 },
-            LogicalClock { id: 2, clock: 12 },
-        ];
-
-        let received_logical_clock = vec![
-            LogicalClock { id: 1, clock: 4 },
-            LogicalClock { id: 2, clock: 18 },
-        ];
-
-        let updated_seconds: Vec<LogicalClock> = node.update_logical_clock(received_logical_clock);
-        assert_eq!(updated_seconds.len(), 2);
-        assert_eq!(updated_seconds[0].id, 1);
-        assert_eq!(updated_seconds[0].clock, 8);
-        assert_eq!(updated_seconds[1].id, 2);
-        assert_eq!(updated_seconds[1].clock, 18);
-
-        assert_eq!(node.logical_clock, updated_seconds);
+    let mut _for_print: Vec<(&i128, &VectorClock)> = all_nodes.iter().clone().collect();
+    _for_print.sort_by(|x,y| x.0.cmp(&y.0));
+    for (id, vc) in _for_print {
+        println!("Final state of node {}: {:?}", id, vc);
     }
-}
+
+}   
