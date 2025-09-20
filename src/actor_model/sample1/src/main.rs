@@ -1,13 +1,12 @@
-use ractor::{ cast, Actor, ActorProcessingErr, ActorRef, async_trait};
-
+use ractor::{async_trait, cast, Actor, ActorProcessingErr, ActorRef};
 
 struct PingPong;
 
 #[derive(Debug, Clone)]
 pub enum Message {
-    Ping, Pong,
+    Ping,
+    Pong,
 }
-
 
 impl Message {
     fn next(&self) -> Self {
@@ -35,22 +34,22 @@ impl Actor for PingPong {
         &self,
         my_self: ActorRef<Self::Msg>,
         _arguments: Self::Arguments,
-    ) -> Result<Self::State, ActorProcessingErr>{
-        cast!(my_self,Message::Ping);
+    ) -> Result<Self::State, ActorProcessingErr> {
+        cast!(my_self, Message::Ping);
         Ok(0u8)
     }
-    
+
     async fn handle(
-            &self,
-            my_self: ActorRef<Self::Msg>,
-            message: Self::Msg,
-            state: &mut Self::State,
-        ) -> Result<(), ActorProcessingErr> {
+        &self,
+        my_self: ActorRef<Self::Msg>,
+        message: Self::Msg,
+        state: &mut Self::State,
+    ) -> Result<(), ActorProcessingErr> {
         if *state < 10u8 {
             message.print();
             cast!(my_self, message.next());
             *state += 1;
-        }else{
+        } else {
             println!();
             my_self.stop(None);
         }
@@ -58,12 +57,10 @@ impl Actor for PingPong {
     }
 }
 
-
 #[tokio::main]
 async fn main() {
     println!("こんにちは、a/sub_project から！");
 
-    let (_actor, handle) = Actor::spawn(None, PingPong, ()).await
-        .expect("なんかだめ");
+    let (_actor, handle) = Actor::spawn(None, PingPong, ()).await.expect("なんかだめ");
     handle.await.expect("なんかだめ");
 }
