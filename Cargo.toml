@@ -9,7 +9,8 @@ rand = "0.8"
 
 [workspace]
 members = [
-    "src/actor_model/sample1"
+    "src/actor_model/sample1",
+    "src/actor_model/multi_actors"
 ]
 
 [[bin]]
