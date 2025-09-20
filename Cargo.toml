@@ -7,6 +7,11 @@ edition = "2021"
 rand = "0.8"
 
 
+[workspace]
+members = [
+    "src/actor_model/sample1"
+]
+
 [[bin]]
 name = "simple_ping_pong"
 path = "src/bin/simple_ping_pong.rs"
