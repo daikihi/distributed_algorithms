@@ -33,26 +33,26 @@ impl Actor for PingPong {
 
     async fn pre_start(
         &self,
-        mySelf: ActorRef<Self::Msg>,
+        my_self: ActorRef<Self::Msg>,
         _arguments: Self::Arguments,
     ) -> Result<Self::State, ActorProcessingErr>{
-        cast!(mySelf,Message::Ping);
+        cast!(my_self,Message::Ping);
         Ok(0u8)
     }
     
     async fn handle(
             &self,
-            myself: ActorRef<Self::Msg>,
+            my_self: ActorRef<Self::Msg>,
             message: Self::Msg,
             state: &mut Self::State,
         ) -> Result<(), ActorProcessingErr> {
         if *state < 10u8 {
             message.print();
-            cast!(myself, message.next());
+            cast!(my_self, message.next());
             *state += 1;
         }else{
             println!();
-            myself.stop(None);
+            my_self.stop(None);
         }
         Ok(())
     }
