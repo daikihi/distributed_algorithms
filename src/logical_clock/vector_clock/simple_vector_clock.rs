@@ -3,13 +3,13 @@ use std::collections::HashMap;
 enum Event {
     Send,
     Receive,
-    Local
+    Local,
 }
 
 #[derive(Debug, Clone)]
-struct VectorClock{
-    pub my_id:i128,
-    pub my_clock:i128,
+struct VectorClock {
+    pub my_id: i128,
+    pub my_clock: i128,
     pub all_clocks: HashMap<i128, i128>,
 }
 
@@ -40,16 +40,14 @@ impl VectorClock {
                 let max_clock = std::cmp::max(*clock, self_clock) + 1;
                 self.my_clock = max_clock;
                 self.all_clocks.insert(*id, max_clock);
-            }else{
+            } else {
                 let self_clock = self.all_clocks.get(id).unwrap();
                 let max_clock = std::cmp::max(*clock, *self_clock);
                 self.all_clocks.insert(*id, max_clock);
             }
         }
     }
-    
 }
-
 
 struct EventData {
     pub event: Event,
@@ -57,17 +55,32 @@ struct EventData {
     pub receiver_id: Option<i128>,
 }
 
-fn seinario() -> Vec<EventData>{
-    let mut sienario_map: Vec< EventData> = Vec::new();
-    sienario_map.push(EventData{event: Event::Local, sender_id: 0, receiver_id: None});
-    sienario_map.push(EventData{event: Event::Send, sender_id: 0, receiver_id: Some(1)});
-    sienario_map.push(EventData{event: Event::Receive, sender_id: 1, receiver_id: Some(0)});
-    sienario_map.push(EventData{event: Event::Local, sender_id: 1, receiver_id: None});
+fn seinario() -> Vec<EventData> {
+    let mut sienario_map: Vec<EventData> = Vec::new();
+    sienario_map.push(EventData {
+        event: Event::Local,
+        sender_id: 0,
+        receiver_id: None,
+    });
+    sienario_map.push(EventData {
+        event: Event::Send,
+        sender_id: 0,
+        receiver_id: Some(1),
+    });
+    sienario_map.push(EventData {
+        event: Event::Receive,
+        sender_id: 1,
+        receiver_id: Some(0),
+    });
+    sienario_map.push(EventData {
+        event: Event::Local,
+        sender_id: 1,
+        receiver_id: None,
+    });
     sienario_map
 }
 
-
-pub fn run(){
+pub fn run() {
     let num_nodes = 5;
     let mut all_nodes: HashMap<i128, VectorClock> = HashMap::new();
     for id in 0..num_nodes {
@@ -83,12 +96,12 @@ pub fn run(){
                 let mut vc = all_nodes.get_mut(&event.sender_id).unwrap();
                 vc.local_event();
                 println!("Local event: {:?}", vc);
-            },
+            }
             Event::Send => {
                 let mut vc = all_nodes.get_mut(&event.sender_id).unwrap();
                 vc.local_event();
                 println!("Send event: {:?}", vc);
-            },
+            }
             Event::Receive => {
                 let sender_vc: &mut VectorClock = all_nodes.get_mut(&event.sender_id).unwrap();
                 let _tmp_sender_vc = sender_vc.clone();
@@ -99,9 +112,8 @@ pub fn run(){
         }
     }
     let mut _for_print: Vec<(&i128, &VectorClock)> = all_nodes.iter().clone().collect();
-    _for_print.sort_by(|x,y| x.0.cmp(&y.0));
+    _for_print.sort_by(|x, y| x.0.cmp(&y.0));
     for (id, vc) in _for_print {
         println!("Final state of node {}: {:?}", id, vc);
     }
-
-}   
+}
