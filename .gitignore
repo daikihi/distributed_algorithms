@@ -23,3 +23,24 @@ Cargo.lock
 # Added by cargo
 
 /target
+
+
+
+# Python仮想環境
+.venv/
+
+# Spec Kitの一時ファイル（あれば）
+.spec/cache/
+.spec/tmp/
+
+# OSやエディタ固有のファイル
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# ログや生成物
+*.log
+__pycache__/
+*.pyc
